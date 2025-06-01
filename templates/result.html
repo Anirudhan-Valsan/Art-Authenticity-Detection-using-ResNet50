@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analysis Results</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #3498db;
+            --human: #2ecc71;
+            --ai: #e74c3c;
+            --dark-bg: #121212;
+            --dark-surface: #1e1e1e;
+            --text-primary: #f5f5f5;
+            --text-secondary: #b3b3b3;
+        }
+        
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--dark-bg);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            width: 900px;
+            height: 600px;
+            background: var(--dark-surface);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            display: flex;
+            overflow: hidden;
+        }
+        
+        .image-section {
+            flex: 1;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-right: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .result-section {
+            flex: 1;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .image-preview {
+            width: 100%;
+            height: 300px;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+        
+        .image-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        
+        .file-info {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+        
+        .verdict {
+            font-size: 1.5rem;
+            font-weight: 500;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .ai-verdict {
+            color: var(--ai);
+        }
+        
+        .human-verdict {
+            color: var(--human);
+        }
+        
+        .confidence-bars {
+            margin: 1.5rem 0;
+        }
+        
+        .confidence-bar {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.8rem;
+        }
+        
+        .confidence-label {
+            width: 120px;
+            font-size: 0.9rem;
+        }
+        
+        .confidence-visual {
+            flex: 1;
+            height: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .confidence-fill {
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        
+        .ai-fill {
+            background: var(--ai);
+            width: {{ result.ai_prob * 100 }}%;
+        }
+        
+        .human-fill {
+            background: var(--human);
+            width: {{ result.human_prob * 100 }}%;
+        }
+        
+        .confidence-value {
+            width: 60px;
+            text-align: right;
+            font-weight: 500;
+        }
+        
+        .ai-value {
+            color: var(--ai);
+        }
+        
+        .human-value {
+            color: var(--human);
+        }
+        
+        .visualization {
+            width: 100%;
+            height: 180px;
+            margin: 1rem 0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .visualization img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .btn {
+            background: var(--primary);
+            color: white;
+            padding: 0.8rem 2rem;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            margin-top: auto;
+            align-self: center;
+        }
+        
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+        
+        .artifact-metrics {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.8rem;
+            margin-top: 1rem;
+        }
+        
+        .metric {
+            background: rgba(255,255,255,0.05);
+            padding: 0.8rem;
+            border-radius: 6px;
+        }
+        
+        .metric-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.3rem;
+        }
+        
+        .metric-value {
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="image-section">
+            <div class="image-preview">
+                <img src="{{ url_for('static', filename='uploads/' + filename) }}" alt="Uploaded Artwork">
+            </div>
+            <div class="file-info">
+                <i class="fas fa-file-image"></i> {{ original_filename }}
+            </div>
+        </div>
+        
+        <div class="result-section">
+            <div class="verdict {% if result.is_ai %}ai-verdict{% else %}human-verdict{% endif %}">
+                <i class="fas {% if result.is_ai %}fa-robot{% else %}fa-paint-brush{% endif %}"></i>
+                {% if result.is_ai %}AI-Generated Artwork{% else %}Human-Created Artwork{% endif %}
+            </div>
+            
+            <div class="confidence-bars">
+                <div class="confidence-bar">
+                    <div class="confidence-label">AI Probability</div>
+                    <div class="confidence-visual">
+                        <div class="confidence-fill ai-fill"></div>
+                    </div>
+                    <div class="confidence-value ai-value">{{ "%.1f"|format(result.ai_prob * 100) }}%</div>
+                </div>
+                
+                <div class="confidence-bar">
+                    <div class="confidence-label">Human Probability</div>
+                    <div class="confidence-visual">
+                        <div class="confidence-fill human-fill"></div>
+                    </div>
+                    <div class="confidence-value human-value">{{ "%.1f"|format(result.human_prob * 100) }}%</div>
+                </div>
+            </div>
+            
+            <div class="visualization">
+                <img src="data:image/png;base64,{{ result.plot_url }}" alt="Analysis Visualization">
+            </div>
+            
+            <div class="artifact-metrics">
+                <div class="metric">
+                    <div class="metric-label">Edge Intensity</div>
+                    <div class="metric-value">{{ "%.3f"|format(result.artifacts.edge_intensity) }}</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Brightness</div>
+                    <div class="metric-value">{{ "%.1f"|format(result.artifacts.brightness) }}</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Contrast</div>
+                    <div class="metric-value">{{ "%.1f"|format(result.artifacts.contrast) }}</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Threshold</div>
+                    <div class="metric-value">{{ "%.0f"|format(result.threshold * 100) }}%</div>
+                </div>
+            </div>
+            
+            <a href="/" class="btn">Analyze Another</a>
+        </div>
+    </div>
+
+    <script>
+        // Simple animation for confidence bars
+        document.addEventListener('DOMContentLoaded', function() {
+            const aiFill = document.querySelector('.ai-fill');
+            const humanFill = document.querySelector('.human-fill');
+            
+            aiFill.style.width = '0';
+            humanFill.style.width = '0';
+            
+            setTimeout(() => {
+                aiFill.style.width = '{{ result.ai_prob * 100 }}%';
+                humanFill.style.width = '{{ result.human_prob * 100 }}%';
+            }, 100);
+        });
+    </script>
+</body>
+</html>
